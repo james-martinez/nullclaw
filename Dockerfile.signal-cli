@@ -1,0 +1,18 @@
+FROM debian:trixie-slim
+
+RUN set -eu; \
+    DEBIAN_FRONTEND=noninteractive apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget curl git ca-certificates openjdk-25-jre; \
+    apt-get clean autoclean; \
+    apt-get autoremove --yes; \
+    rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log; \
+    wget -O /usr/local/bin/nullclaw "https://github.com/nullclaw/nullclaw/releases/latest/download/nullclaw-linux-x86_64.bin"; \
+    chmod +x /usr/local/bin/nullclaw; \
+    VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//'); \
+    curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz; \
+    tar xf signal-cli-"${VERSION}".tar.gz -C /opt; \
+    ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/; \
+    rm -fr signal-cli-"${VERSION}".tar.gz;
+
+ENTRYPOINT ["nullclaw"]
+CMD ["gateway", "--port", "3000", "--host", "::"]
