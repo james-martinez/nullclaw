@@ -291,6 +291,7 @@ pub const lark = @import("lark.zig");
 pub const dingtalk = @import("dingtalk.zig");
 pub const wechat = @import("wechat.zig");
 pub const wecom = @import("wecom.zig");
+pub const weixin = @import("weixin.zig");
 pub const nostr = @import("nostr.zig");
 pub const line = @import("line.zig");
 pub const onebot = @import("onebot.zig");
@@ -504,7 +505,7 @@ pub fn nowEpochSecs() u64 {
 // Shared Utilities (re-exported from top-level modules)
 // ════════════════════════════════════════════════════════════════════════════
 
-/// HTTP POST via curl subprocess (safe on Zig 0.15, avoids std.http.Client segfaults).
+/// HTTP POST via curl subprocess with explicit timeout/error semantics.
 pub const http_util = @import("../http_util.zig");
 
 /// JSON string escaping (RFC 8259). appendJsonString adds enclosing quotes.
