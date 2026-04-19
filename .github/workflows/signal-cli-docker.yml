@@ -3,9 +3,6 @@ name: Signal-CLI Docker
 on:
   push:
     branches: [signal-cli]
-    paths:
-      - 'Dockerfile.signal-cli'
-      - '.github/workflows/signal-cli-docker.yml'
   workflow_dispatch:
 
 jobs:
