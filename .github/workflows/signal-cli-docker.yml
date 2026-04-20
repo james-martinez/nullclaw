@@ -28,4 +28,4 @@ jobs:
         with:
           file: Dockerfile.signal-cli
           push: true
-          tags: signal-cli
+          tags: ghcr.io/${{ github.repository }}:signal-cli
