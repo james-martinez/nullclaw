@@ -2,11 +2,16 @@ FROM debian:trixie-slim
 
 RUN set -eu; \
     DEBIAN_FRONTEND=noninteractive apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget curl git ca-certificates openjdk-25-jre nano chromium fonts-liberation libnss3 libxss1 libgbm1 xvfb libatk-bridge2.0-0t64 libatk1.0-0t64 libgtk-3-0t64; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip wget curl git ca-certificates openjdk-25-jre nano chromium fonts-liberation libnss3 libxss1 libgbm1 xvfb libatk-bridge2.0-0t64 libatk1.0-0t64 libgtk-3-0t64; \
     apt-get clean autoclean; \
     apt-get autoremove --yes; \
     rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log; \
     dpkg --configure -a; \
+    CR_VERSION=$(chromium --version | grep -oP '[0-9]+(\.[0-9]+)+'); \
+    curl -L "https://storage.googleapis.com/chrome-for-testing-public/$CR_VERSION/linux64/chromedriver-linux64.zip" -o /tmp/chromedriver.zip; \
+    unzip -o /tmp/chromedriver.zip -d /tmp/chromedriver; \
+    cp /tmp/chromedriver/chromedriver-linux64/chromedriver /usr/local/bin/; \
+    chmod +x /usr/local/bin/chromedriver; \    
     wget -O /usr/local/bin/nullclaw "https://github.com/nullclaw/nullclaw/releases/download/v2026.4.9/nullclaw-linux-x86_64.bin"; \
     chmod +x /usr/local/bin/nullclaw; \
     VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//'); \
