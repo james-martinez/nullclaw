@@ -7,7 +7,8 @@ RUN set -eu; \
     apt-get autoremove --yes; \
     rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log; \
     dpkg --configure -a; \
-    wget -O /usr/local/bin/nullclaw "https://github.com/nullclaw/nullclaw/releases/latest/download/nullclaw-linux-x86_64.bin"; \
+    #wget -O /usr/local/bin/nullclaw "https://github.com/nullclaw/nullclaw/releases/latest/download/nullclaw-linux-x86_64.bin"; \
+    wget -O /usr/local/bin/nullclaw "https://github.com/nullclaw/nullclaw/releases/download/v2026.4.9/nullclaw-linux-x86_64.bin; \
     chmod +x /usr/local/bin/nullclaw; \
     VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//'); \
     curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz; \
