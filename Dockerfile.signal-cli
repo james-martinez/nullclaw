@@ -2,10 +2,11 @@ FROM debian:trixie-slim
 
 RUN set -eu; \
     DEBIAN_FRONTEND=noninteractive apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget curl git ca-certificates openjdk-25-jre; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget curl git ca-certificates openjdk-25-jre nano chromium xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all xinit x11-xserver-utils; \
     apt-get clean autoclean; \
     apt-get autoremove --yes; \
     rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log; \
+    dpkg --configure -a; \
     wget -O /usr/local/bin/nullclaw "https://github.com/nullclaw/nullclaw/releases/latest/download/nullclaw-linux-x86_64.bin"; \
     chmod +x /usr/local/bin/nullclaw; \
     VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//'); \
