@@ -1,8 +1,60 @@
+FROM debian:trixie-slim AS zig-builder
+
+ARG ZIG_VERSION=0.16.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 curl ca-certificates \
+    && rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log
+
+WORKDIR /zig-install
+
+COPY .github/scripts/install-zig.sh .
+
+RUN mkdir -p /tmp/zig-path && \
+    GITHUB_PATH=/tmp/zig-path/path RUNNER_TEMP=/opt bash install-zig.sh "${ZIG_VERSION}" && \
+    ZIG_PATH="$(cat /tmp/zig-path/path)" && \
+    ln -sf "$ZIG_PATH/zig" /usr/local/bin/zig && \
+    zig version
+
+# ── Stage 2: Build nullclaw from source ──────────────────────
+FROM debian:trixie-slim AS nullclaw-builder
+
+ARG ZIG_VERSION=0.16.0
+ARG VERSION=dev
+
+# Install dependencies for Zig build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 curl ca-certificates musl-dev build-essential \
+    && rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log
+
+WORKDIR /zig-install
+
+COPY .github/scripts/install-zig.sh .
+
+RUN mkdir -p /tmp/zig-path && \
+    GITHUB_PATH=/tmp/zig-path/path RUNNER_TEMP=/opt bash install-zig.sh "${ZIG_VERSION}" && \
+    ZIG_PATH="$(cat /tmp/zig-path/path)" && \
+    ln -sf "$ZIG_PATH/zig" /usr/local/bin/zig && \
+    zig version
+
+# Copy nullclaw source
+COPY . /nullclaw-src
+
+WORKDIR /nullclaw-src
+
+RUN zig build -Dtarget=x86_64-linux-musl -Doptimize=ReleaseSmall -Dversion="${VERSION}"
+
+# ── Stage 3: Runtime ─────────────────────────────────────────
 FROM debian:trixie-slim
 
+# Install runtime dependencies
 RUN set -eu; \
     DEBIAN_FRONTEND=noninteractive apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip wget curl git ca-certificates openjdk-25-jre nano chromium fonts-liberation libnss3 libxss1 libgbm1 xvfb libatk-bridge2.0-0t64 libatk1.0-0t64 libgtk-3-0t64 x11-apps imagemagick; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        unzip wget curl git ca-certificates openjdk-25-jre \
+        nano chromium fonts-liberation libnss3 libxss1 libgbm1 \
+        xvfb libatk-bridge2.0-0t64 libatk1.0-0t64 libgtk-3-0t64 \
+        x11-apps imagemagick; \
     apt-get clean autoclean; \
     apt-get autoremove --yes; \
     rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log; \
@@ -11,14 +63,19 @@ RUN set -eu; \
     curl -L "https://storage.googleapis.com/chrome-for-testing-public/$CR_VERSION/linux64/chromedriver-linux64.zip" -o /tmp/chromedriver.zip; \
     unzip -o /tmp/chromedriver.zip -d /tmp/chromedriver; \
     cp /tmp/chromedriver/chromedriver-linux64/chromedriver /usr/local/bin/; \
-    chmod +x /usr/local/bin/chromedriver; \    
-    wget -O /usr/local/bin/nullclaw "https://github.com/nullclaw/nullclaw/releases/download/v2026.4.9/nullclaw-linux-x86_64.bin"; \
-    chmod +x /usr/local/bin/nullclaw; \
+    chmod +x /usr/local/bin/chromedriver
+
+# Copy nullclaw binary from builder
+COPY --from=nullclaw-builder /nullclaw-src/zig-out/bin/nullclaw /usr/local/bin/nullclaw
+RUN chmod +x /usr/local/bin/nullclaw
+
+# Download and install signal-cli
+RUN set -eu; \
     VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//'); \
     curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz; \
     tar xf signal-cli-"${VERSION}".tar.gz -C /opt; \
     ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/; \
-    rm -fr signal-cli-"${VERSION}".tar.gz;
+    rm -fr signal-cli-"${VERSION}".tar.gz
 
 ENTRYPOINT ["nullclaw"]
 CMD ["gateway", "--port", "3000", "--host", "::"]
